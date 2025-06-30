@@ -1,0 +1,21 @@
+{% extends 'joballotment/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Review User Report for Job: {{ report.job.title }}</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Report Content</h5>
+            <p class="card-text">{{ report.content }}</p>
+            <p class="text-muted small">Submitted at: {{ report.submitted_at|date:'M d, Y H:i' }}</p>
+        </div>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check2-circle"></i> Verify User Report
+        </button>
+        <a href="{% url 'supervisor_dashboard' %}" class="btn btn-secondary ms-2">Back</a>
+    </form>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+{% endblock %} 

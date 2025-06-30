@@ -1,0 +1,82 @@
+{% extends 'joballotment/base.html' %}
+{% load dict_extras %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="dashboard-title">Admin Dashboard</h2>
+        <div>
+            <span class="me-3">User Name: {{ request.user.username }}</span>
+            <span>Time: <span id="currentTime"></span></span>
+        </div>
+    </div>
+    <div class="mb-4">
+        <a href="{% url 'job_create' %}" class="btn btn-success me-2">Create Job</a>
+        <a href="{% url 'user_create' %}" class="btn btn-primary">Create User</a>
+    </div>
+    <h4>Jobs</h4>
+    <table class="table table-bordered">
+        <thead><tr><th>Title</th><th>Assigned To</th><th>Supervisor</th><th>Status</th><th>Workflow Status</th><th>Allot</th></tr></thead>
+        <tbody>
+        {% for job in jobs %}
+            <tr>
+                <td>{{ job.title }}</td>
+                <td>{{ job.assigned_to }}</td>
+                <td>{{ job.supervisor }}</td>
+                <td>{{ job.status|title }}</td>
+                <td>{{ job_statuses|get_item:job.id }}</td>
+                <td><a href="{% url 'job_allotment' job.id %}" class="btn btn-sm btn-warning">Allot</a> <a href="{% url 'job_delete' job.id %}" class="btn btn-sm btn-danger ms-2">Delete</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">No jobs found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h4>Reports</h4>
+    <table class="table table-bordered">
+        <thead><tr><th>Job</th><th>Submitted By</th><th>Type</th><th>Status</th><th>Verify</th></tr></thead>
+        <tbody>
+        {% for report in reports %}
+            <tr>
+                <td>{{ report.job.title }}</td>
+                <td>{{ report.submitted_by }}</td>
+                <td>{{ report.report_type|title }}</td>
+                <td>{{ report.status|title }}</td>
+                <td>
+                  {% if job_statuses|get_item:report.job.id == 'Ready for admin verification' and report.report_type == 'supervisor' and report.status == 'verified' and report.job.status != 'completed' %}
+                    <a href="{% url 'report_verify' report.id %}" class="btn btn-sm btn-info">Verify</a>
+                  {% else %}
+                    <button class="btn btn-sm btn-secondary" disabled>Verify</button>
+                  {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">No reports found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h4>Users</h4>
+    <table class="table table-bordered">
+        <thead><tr><th>Username</th><th>Email</th><th>Role</th></tr></thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role|title }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3">No users found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'logout' %}" class="btn btn-danger mt-4">Logout</a>
+</div>
+<script>
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+</script>
+{% endblock %} 
