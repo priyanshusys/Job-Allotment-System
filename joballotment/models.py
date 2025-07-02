@@ -17,6 +17,7 @@ class Job(models.Model):
     assigned_to = models.ForeignKey('CustomUser', related_name='jobs', on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role': 'user'})
     supervisor = models.ForeignKey('CustomUser', related_name='supervised_jobs', on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role': 'supervisor'})
     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')], default='pending')
+    remark = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

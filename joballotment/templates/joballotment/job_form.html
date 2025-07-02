@@ -2,10 +2,52 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Create Job</h2>
-    <form method="post">
+    <form method="post" id="jobForm">
         {% csrf_token %}
-        {{ form.as_p }}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Job Title (Dropdown)</th>
+                    <th>Job Title (Custom)</th>
+                    <th>Description</th>
+                    <th>Remark</th>
+                    <th>Assign to</th>
+                    <th>Supervisor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ form.job_title_dropdown }}</td>
+                    <td>{{ form.title }}</td>
+                    <td>{{ form.description }}</td>
+                    <td>{{ form.remark }}</td>
+                    <td>{{ form.assigned_to }}</td>
+                    <td>{{ form.supervisor }}</td>
+                </tr>
+            </tbody>
+        </table>
         <button type="submit" class="btn btn-primary">Create</button>
     </form>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.getElementById('id_job_title_dropdown');
+        const customInput = document.getElementById('id_title');
+        function toggleCustomInput() {
+            if (dropdown.value === 'Other' || dropdown.value === '') {
+                customInput.readOnly = false;
+                customInput.required = true;
+                customInput.value = '';
+            } else {
+                customInput.readOnly = true;
+                customInput.required = false;
+                customInput.value = dropdown.value;
+            }
+        }
+        if (dropdown && customInput) {
+            dropdown.addEventListener('change', toggleCustomInput);
+            toggleCustomInput();
+        }
+    });
+</script>
 {% endblock %} 

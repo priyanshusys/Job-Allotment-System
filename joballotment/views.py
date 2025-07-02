@@ -5,6 +5,8 @@ from django.contrib import messages
 from .models import Job, Report, CustomUser
 from .forms import JobForm, CustomUserCreationForm, JobAllotmentForm, ReportForm
 from django.views.decorators.cache import never_cache
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 
 def is_admin(user):
     return user.is_authenticated and user.role == 'admin'
@@ -119,32 +121,66 @@ def admin_dashboard(request):
     jobs = Job.objects.all()
     reports = Report.objects.all()
     users = CustomUser.objects.all()
+    searched_user_id = request.GET.get('search_user_id')
+    searched_user_name = ''
+    if searched_user_id:
+        try:
+            # Try numeric ID first
+            if searched_user_id.isdigit():
+                searched_user = CustomUser.objects.get(id=int(searched_user_id))
+            else:
+                searched_user = CustomUser.objects.get(username=searched_user_id)
+            searched_user_name = searched_user.get_full_name() or searched_user.username
+        except CustomUser.DoesNotExist:
+            searched_user_name = 'User not found'
+    if request.method == 'POST' and 'reset_password' in request.POST:
+        reset_user_id = request.POST.get('reset_user_id')
+        try:
+            # Try numeric ID first
+            if reset_user_id.isdigit():
+                reset_user = CustomUser.objects.get(id=int(reset_user_id))
+            else:
+                reset_user = CustomUser.objects.get(username=reset_user_id)
+            reset_user.set_password('user@1234')
+            reset_user.save()
+            messages.success(request, f"Password for {reset_user.username} reset to 'user@1234'.")
+        except CustomUser.DoesNotExist:
+            messages.error(request, 'User not found for password reset.')
+        return HttpResponseRedirect(reverse('admin_dashboard'))
     # Build workflow status for each job
-    job_statuses = {}
+    job_user_statuses = {}
+    job_supervisor_statuses = {}
+    job_final_statuses = {}
     for job in jobs:
         user_report = Report.objects.filter(job=job, report_type='user').first()
         supervisor_report = Report.objects.filter(job=job, report_type='supervisor').first()
-        missing_steps = []
+        # User status
         if not user_report:
-            missing_steps.append('User report not submitted')
-        elif user_report.status != 'verified':
-            missing_steps.append('User report not verified by supervisor')
-        if not supervisor_report:
-            missing_steps.append('Supervisor report not submitted')
-        elif supervisor_report.status != 'verified':
-            missing_steps.append('Supervisor report not verified')
-        if job.status == 'completed':
-            status = 'Completed'
-        elif not missing_steps:
-            status = 'Ready for admin verification'
+            user_status = 'Pending'
         else:
-            status = ' | '.join(missing_steps)
-        job_statuses[job.id] = status
+            user_status = user_report.status.title()
+        # Supervisor status
+        if not supervisor_report:
+            supervisor_status = 'Pending'
+        else:
+            supervisor_status = supervisor_report.status.title()
+        # Final status
+        if job.status == 'completed':
+            final_status = 'Approved'
+        else:
+            final_status = 'Pending'
+        job_user_statuses[job.id] = user_status
+        job_supervisor_statuses[job.id] = supervisor_status
+        job_final_statuses[job.id] = final_status
     return render(request, 'joballotment/admin_dashboard.html', {
         'jobs': jobs,
         'reports': reports,
         'users': users,
-        'job_statuses': job_statuses,
+        'job_user_statuses': job_user_statuses,
+        'job_supervisor_statuses': job_supervisor_statuses,
+        'job_final_statuses': job_final_statuses,
+        'searched_user_id': searched_user_id,
+        'searched_user_name': searched_user_name,
     })
 
 @login_required
