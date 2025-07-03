@@ -1,4 +1,5 @@
 {% extends 'joballotment/base.html' %}
+{% load dict_extras %}
 {% block content %}
 <div class="container mt-4">
     <div class="row mb-4">
@@ -56,21 +57,34 @@
             <tr>
                 <td>{{ job.title }}</td>
                 <td>
-                    {% if job.status == 'completed' %}
+                    {% if job_supervisor_report_statuses|get_item:job.id == 'Verified' %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verified</span>
+                    {% elif job_supervisor_report_statuses|get_item:job.id == 'Submitted' %}
+                        <span class="badge bg-info text-dark"><i class="bi bi-file-earmark-check"></i> Submitted</span>
+                    {% elif job.status == 'completed' %}
                         <span class="badge bg-success"><i class="bi bi-check-circle"></i> Completed</span>
                     {% else %}
                         <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
                     {% endif %}
                 </td>
                 <td>
-                    {% if job.id in jobs_with_verified_user_report %}
-                        <a href="{% url 'report_submit' job.id %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-file-earmark-plus"></i> Submit Final Report
-                        </a>
+                    {% if job_supervisor_report_statuses|get_item:job.id == 'Pending' %}
+                        {% if job.id in jobs_with_verified_user_report %}
+                            <a href="{% url 'report_submit' job.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-file-earmark-plus"></i> Submit Final Report
+                            </a>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                <i class="bi bi-lock"></i> Awaiting User Report Verification
+                            </button>
+                        {% endif %}
                     {% else %}
-                        <button class="btn btn-sm btn-outline-secondary" disabled>
-                            <i class="bi bi-lock"></i> Awaiting User Report Verification
-                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" disabled>Report Submitted</button>
+                        {% for report in supervisor_reports %}
+                            {% if report.job.id == job.id %}
+                                <a href="{% url 'report_detail' report.id %}" class="btn btn-sm btn-outline-info ms-2">View</a>
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                 </td>
             </tr>

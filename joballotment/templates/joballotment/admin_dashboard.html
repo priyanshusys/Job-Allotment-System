@@ -2,13 +2,6 @@
 {% load dict_extras %}
 {% block content %}
 <div class="container mt-4">
-    {% if messages %}
-      <div class="mt-3">
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="dashboard-title">Admin Dashboard</h2>
         <div>
@@ -37,7 +30,7 @@
     </div>
     <h4>Jobs</h4>
     <table class="table table-bordered">
-        <thead><tr><th>Job ID</th><th>Title</th><th>Description</th><th>Remark</th><th>Assigned To</th><th>Supervisor</th><th>Status</th><th>User Status</th><th>Supervisor Status</th><th>Final Status</th><th>Allot</th></tr></thead>
+        <thead><tr><th>Job ID</th><th>Title</th><th>Description</th><th>Remarks</th><th>Assigned To</th><th>Supervisor</th><th>User Status</th><th>Supervisor Status</th><th>Final Status</th><th>Allot</th></tr></thead>
         <tbody>
         {% for job in jobs %}
             <tr>
@@ -47,7 +40,6 @@
                 <td>{{ job.remark }}</td>
                 <td>{{ job.assigned_to }}</td>
                 <td>{{ job.supervisor }}</td>
-                <td>{{ job.status|title }}</td>
                 <td>{{ job_user_statuses|get_item:job.id }}</td>
                 <td>{{ job_supervisor_statuses|get_item:job.id }}</td>
                 <td>{{ job_final_statuses|get_item:job.id }}</td>
@@ -60,24 +52,50 @@
     </table>
     <h4>Reports</h4>
     <table class="table table-bordered">
-        <thead><tr><th>Job</th><th>Submitted By</th><th>Type</th><th>Status</th><th>Verify</th></tr></thead>
-        <tbody>
-        {% for report in reports %}
+        <thead>
             <tr>
-                <td>{{ report.job.title }}</td>
-                <td>{{ report.submitted_by }}</td>
-                <td>{{ report.report_type|title }}</td>
-                <td>{{ report.status|title }}</td>
+                <th>Job</th>
+                <th>User Report Status</th>
+                <th>Supervisor Report Status</th>
+                <th>Verify</th>
+                <th>View</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for job in jobs %}
+            {% with user_report=reports|get_item:job.id|get_item:'user' supervisor_report=reports|get_item:job.id|get_item:'supervisor' %}
+            <tr>
+                <td>{{ job.title }}</td>
                 <td>
-                  {% if job_statuses|get_item:report.job.id == 'Ready for admin verification' and report.report_type == 'supervisor' and report.status == 'verified' and report.job.status != 'completed' %}
-                    <a href="{% url 'report_verify' report.id %}" class="btn btn-sm btn-info">Verify</a>
-                  {% else %}
-                    <button class="btn btn-sm btn-secondary" disabled>Verify</button>
-                  {% endif %}
+                    {% if user_report %}
+                        {{ user_report.status|title }}
+                    {% else %}
+                        Pending
+                    {% endif %}
+                </td>
+                <td>
+                    {% if supervisor_report %}
+                        {{ supervisor_report.status|title }}
+                    {% else %}
+                        Pending
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user_report and user_report.status == 'verified' and supervisor_report and supervisor_report.status == 'pending' and job.status != 'completed' %}
+                        <a href="{% url 'report_verify' supervisor_report.id %}" class="btn btn-sm btn-info">Verify</a>
+                    {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>Verify</button>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user_report %}
+                        <a href="{% url 'report_detail' user_report.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                    {% endif %}
                 </td>
             </tr>
+            {% endwith %}
         {% empty %}
-            <tr><td colspan="5">No reports found.</td></tr>
+            <tr><td colspan="5">No jobs found.</td></tr>
         {% endfor %}
         </tbody>
     </table>

@@ -14,4 +14,5 @@ urlpatterns = [
     path('report/<int:report_id>/verify/', views.report_verify, name='report_verify'),
     path('report/<int:report_id>/supervisor_verify/', views.supervisor_verify_user_report, name='supervisor_verify_user_report'),
     path('job/<int:job_id>/delete/', views.job_delete, name='job_delete'),
+    path('report/<int:report_id>/', views.report_detail, name='report_detail'),
 ] 

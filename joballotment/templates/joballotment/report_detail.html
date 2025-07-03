@@ -1,0 +1,38 @@
+{% extends 'joballotment/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Report Details</h2>
+    
+    {% if user_report or supervisor_report %}
+    <div class="row">
+        {% if user_report %}
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">User Report</div>
+                <div class="card-body">
+                    <p><strong>Submitted By:</strong> {{ user_report.submitted_by }}</p>
+                    <p><strong>Status:</strong> {{ user_report.status|title }}</p>
+                    <p><strong>Content:</strong><br>{{ user_report.content }}</p>
+                    <p class="text-muted small">Submitted at: {{ user_report.submitted_at|date:'M d, Y H:i' }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if supervisor_report %}
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Supervisor Report</div>
+                <div class="card-body">
+                    <p><strong>Submitted By:</strong> {{ supervisor_report.submitted_by }}</p>
+                    <p><strong>Status:</strong> {{ supervisor_report.status|title }}</p>
+                    <p><strong>Content:</strong><br>{{ supervisor_report.content }}</p>
+                    <p class="text-muted small">Submitted at: {{ supervisor_report.submitted_at|date:'M d, Y H:i' }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+</div>
+{% endblock %} 

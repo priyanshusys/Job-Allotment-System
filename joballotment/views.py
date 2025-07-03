@@ -7,6 +7,7 @@ from .forms import JobForm, CustomUserCreationForm, JobAllotmentForm, ReportForm
 from django.views.decorators.cache import never_cache
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.core.exceptions import PermissionDenied
 
 def is_admin(user):
     return user.is_authenticated and user.role == 'admin'
@@ -91,8 +92,9 @@ def report_submit(request, job_id):
             report.job = job
             report.submitted_by = request.user
             report.report_type = request.user.role
-            if request.user.role == 'supervisor':
-                report.status = 'verified'
+            # Supervisor report should be pending until admin verifies
+            # if request.user.role == 'supervisor':
+            #     report.status = 'verified'
             report.save()
             messages.success(request, 'Report submitted!')
             return redirect('user_dashboard' if request.user.role == 'user' else 'supervisor_dashboard')
@@ -151,34 +153,52 @@ def admin_dashboard(request):
     job_user_statuses = {}
     job_supervisor_statuses = {}
     job_final_statuses = {}
+    job_statuses = {}
+    job_reports = {}
     for job in jobs:
         user_report = Report.objects.filter(job=job, report_type='user').first()
         supervisor_report = Report.objects.filter(job=job, report_type='supervisor').first()
         # User status
         if not user_report:
             user_status = 'Pending'
+        elif user_report.status == 'verified':
+            user_status = 'Completed'
         else:
-            user_status = user_report.status.title()
+            user_status = 'Submitted'
         # Supervisor status
         if not supervisor_report:
             supervisor_status = 'Pending'
+        elif supervisor_report.status == 'verified':
+            supervisor_status = 'Completed'
         else:
-            supervisor_status = supervisor_report.status.title()
+            supervisor_status = 'Submitted'
         # Final status
         if job.status == 'completed':
             final_status = 'Approved'
+        elif supervisor_report and supervisor_report.status == 'verified' and job.status != 'completed':
+            final_status = 'Verified by Admin'
         else:
             final_status = 'Pending'
+        # Workflow status for enabling verify button
+        if user_report and user_report.status == 'verified' and supervisor_report and supervisor_report.status == 'pending' and job.status != 'completed':
+            job_statuses[job.id] = 'Ready for admin verification'
+        else:
+            job_statuses[job.id] = ''
         job_user_statuses[job.id] = user_status
         job_supervisor_statuses[job.id] = supervisor_status
         job_final_statuses[job.id] = final_status
+        job_reports[job.id] = {
+            'user': user_report,
+            'supervisor': supervisor_report,
+        }
     return render(request, 'joballotment/admin_dashboard.html', {
         'jobs': jobs,
-        'reports': reports,
+        'reports': job_reports,
         'users': users,
         'job_user_statuses': job_user_statuses,
         'job_supervisor_statuses': job_supervisor_statuses,
         'job_final_statuses': job_final_statuses,
+        'job_statuses': job_statuses,
         'searched_user_id': searched_user_id,
         'searched_user_name': searched_user_name,
     })
@@ -190,12 +210,24 @@ def user_dashboard(request):
     total_jobs = jobs.count()
     completed_jobs = jobs.filter(status='completed').count()
     pending_jobs = jobs.filter(status='pending').count()
+    # Map job.id to report status for the current user
+    job_report_statuses = {}
+    for job in jobs:
+        report = reports.filter(job=job, report_type='user').first()
+        if report:
+            if report.status == 'verified':
+                job_report_statuses[job.id] = 'Verified'
+            else:
+                job_report_statuses[job.id] = 'Submitted'
+        else:
+            job_report_statuses[job.id] = 'Pending'
     return render(request, 'joballotment/user_dashboard.html', {
         'jobs': jobs,
         'reports': reports,
         'total_jobs': total_jobs,
         'completed_jobs': completed_jobs,
         'pending_jobs': pending_jobs,
+        'job_report_statuses': job_report_statuses,
     })
 
 @login_required
@@ -212,13 +244,27 @@ def supervisor_dashboard(request):
         if user_report_verified and not supervisor_report_exists:
             pending_jobs_to_supervise += 1
     pending_user_reports = user_reports_to_review.count()
+    # Map job.id to supervisor report status for the current supervisor
+    supervisor_reports = Report.objects.filter(job__in=jobs, report_type='supervisor', submitted_by=request.user)
+    job_supervisor_report_statuses = {}
+    for job in jobs:
+        report = supervisor_reports.filter(job=job).first()
+        if report:
+            if job.status == 'completed':
+                job_supervisor_report_statuses[job.id] = 'Verified'
+            else:
+                job_supervisor_report_statuses[job.id] = 'Submitted'
+        else:
+            job_supervisor_report_statuses[job.id] = 'Pending'
     return render(request, 'joballotment/supervisor_dashboard.html', {
         'jobs': jobs,
-        'reports': user_reports,
+        'user_reports': user_reports,
+        'supervisor_reports': supervisor_reports,
         'user_reports_to_review': user_reports_to_review,
         'jobs_with_verified_user_report': jobs_with_verified_user_report,
         'pending_jobs_to_supervise': pending_jobs_to_supervise,
         'pending_user_reports': pending_user_reports,
+        'job_supervisor_report_statuses': job_supervisor_report_statuses,
     })
 
 @login_required
@@ -240,3 +286,18 @@ def job_delete(request, job_id):
         messages.success(request, 'Job deleted successfully!')
         return redirect('admin_dashboard')
     return render(request, 'joballotment/job_confirm_delete.html', {'job': job})
+
+@login_required
+def report_detail(request, report_id):
+    report = get_object_or_404(Report, id=report_id)
+    # Allow admin or the user who submitted the report
+    if request.user.is_superuser or (hasattr(request.user, 'role') and request.user.role == 'admin') or report.submitted_by == request.user:
+        user_report = Report.objects.filter(job=report.job, report_type='user').first()
+        supervisor_report = Report.objects.filter(job=report.job, report_type='supervisor').first()
+        return render(request, 'joballotment/report_detail.html', {
+            'report': report,
+            'user_report': user_report,
+            'supervisor_report': supervisor_report,
+        })
+    else:
+        raise PermissionDenied
