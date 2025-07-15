@@ -475,21 +475,20 @@ def admin_section(request, section):
         form = NewTitleForm(request.POST or None)
         if request.method == 'POST':
             if form.is_valid():
-                new_title = form.cleaned_data['title'].strip()
-                # Add to JOB_TITLE_CHOICES if not present
+                new_title_name = form.cleaned_data['title_name'].strip()
+                new_title_code = form.cleaned_data['title_code'].strip()
                 from .forms import JOB_TITLE_CHOICES
-                titles = [t[0].lower() for t in JOB_TITLE_CHOICES]
-                if new_title.lower() not in titles and new_title:
-                    # Insert before 'Other'
+                codes = [t[0].lower() for t in JOB_TITLE_CHOICES]
+                if new_title_code.lower() not in codes and new_title_name:
                     idx = next((i for i, t in enumerate(JOB_TITLE_CHOICES) if t[0] == 'Other'), len(JOB_TITLE_CHOICES))
-                    JOB_TITLE_CHOICES.insert(idx, (new_title, new_title))
+                    JOB_TITLE_CHOICES.insert(idx, (new_title_code, new_title_name))
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                         return HttpResponse('<div class="alert alert-success">Title added successfully!</div>')
                     else:
                         messages.success(request, 'Title added successfully!')
                         return redirect(request.path)
                 else:
-                    form.add_error('title', 'Title already exists or is invalid.')
+                    form.add_error('title_code', 'Title code already exists or is invalid.')
         context['form'] = form
         return render(request, 'joballotment/new_title.html', context)
     else:

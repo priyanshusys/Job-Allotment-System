@@ -64,4 +64,5 @@ class ReportForm(forms.ModelForm):
         fields = ['content']
 
 class NewTitleForm(forms.Form):
-    title = forms.CharField(label='Title', max_length=255, required=True) 
+    title_name = forms.CharField(label='Title Name', max_length=255, required=True)
+    title_code = forms.CharField(label='Title Code', max_length=50, required=True) 

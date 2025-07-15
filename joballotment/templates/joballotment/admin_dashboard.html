@@ -83,12 +83,6 @@
   <div class="legacy-sidebar">
     <div class="sidebar-title">Admin Panel</div>
     <ul>
-      <li
-        id="menu-legacy-dashboard"
-        onclick="loadSection('legacy_dashboard', this)"
-      >
-        Legacy Dashboard
-      </li>
       <li id="menu-create-user" onclick="loadSection('create_user', this)">Create User</li>
       <li id="menu-create-job" onclick="loadSection('create_job', this)">
         Create Job
@@ -111,15 +105,7 @@
       <li id="menu-new-title" onclick="loadSection('new_title', this)">
         New Title
       </li>
-      <li
-        id="menu-job-allocation"
-        onclick="loadSection('job_allocation', this)"
-      >
-        Job Allocation
-      </li>
-      <li id="menu-job-report" onclick="loadSection('job_report', this)">
-        Job Report
-      </li>
+      
     </ul>
   </div>
   <div class="legacy-main">
@@ -194,6 +180,9 @@
       .then((html) => {
         document.getElementById("main-content").innerHTML = html;
         attachAjaxFormHandler();
+        if (section === 'change_password' && typeof attachChangePasswordHandlers === 'function') {
+          attachChangePasswordHandlers();
+        }
       });
   }
   function attachAjaxFormHandler() {

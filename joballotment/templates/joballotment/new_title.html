@@ -1,7 +1,14 @@
 <div id="ajax-message"></div>
 <form id="ajax-title-form" method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    <div class="mb-3">
+        <label for="id_title_name" class="form-label">Title Name</label>
+        {{ form.title_name }}
+    </div>
+    <div class="mb-3">
+        <label for="id_title_code" class="form-label">Title Code</label>
+        {{ form.title_code }}
+    </div>
     <button type="submit" class="btn btn-success">Add Title</button>
 </form>
 <script>

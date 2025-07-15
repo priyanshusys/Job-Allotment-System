@@ -14,13 +14,25 @@
     </style>
 </head>
 <body>
+    {% block content %}{% endblock %}
     {% if messages %}
-    <div class="container mt-3 messages-with-sidebar">
+    <div id="messages-container" class="position-fixed bottom-0 start-50 translate-middle-x mb-4" style="z-index: 1055; min-width: 300px; max-width: 90vw;">
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            <div class="alert alert-{{ message.tags }} fade show mb-2" role="alert">{{ message }}</div>
         {% endfor %}
     </div>
+    <script>
+      setTimeout(function() {
+        var container = document.getElementById('messages-container');
+        if (container) {
+          container.querySelectorAll('.alert').forEach(function(alert) {
+            alert.classList.remove('show');
+            alert.classList.add('hide');
+            setTimeout(function() { alert.remove(); }, 400);
+          });
+        }
+      }, 4000);
+    </script>
     {% endif %}
-    {% block content %}{% endblock %}
 </body>
 </html> 
