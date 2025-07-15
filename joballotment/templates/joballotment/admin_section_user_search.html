@@ -1,0 +1,40 @@
+{% load dict_extras %}
+<div class="mb-4">
+  <div class="row g-2 align-items-center mb-2">
+    <form
+      method="get"
+      class="col-auto d-flex align-items-center"
+      style="gap: 0.5rem"
+    >
+      <label for="search_user_id" class="form-label mb-0">User ID:</label>
+      <input
+        type="text"
+        class="form-control"
+        id="search_user_id"
+        name="search_user_id"
+        value="{{ searched_user_id|default:'' }}"
+      />
+      <button type="submit" class="btn btn-secondary">Search</button>
+      <input
+        type="text"
+        class="form-control"
+        value="{{ searched_user_name|default:'' }}"
+        readonly
+        placeholder="Name"
+      />
+    </form>
+    {% if searched_user_id and searched_user_name %}
+    <form method="post" class="col-auto" style="display: inline">
+      {% csrf_token %}
+      <input
+        type="hidden"
+        name="reset_user_id"
+        value="{{ searched_user_id }}"
+      />
+      <button type="submit" name="reset_password" class="btn btn-warning">
+        Reset Password
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>

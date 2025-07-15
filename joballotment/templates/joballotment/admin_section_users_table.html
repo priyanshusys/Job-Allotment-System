@@ -1,0 +1,25 @@
+<h4>Users</h4>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>User ID</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ user.user_id }}</td>
+      <td>{{ user.username }}</td>
+      <td>{{ user.email }}</td>
+      <td>{{ user.role|title }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5">No users found.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

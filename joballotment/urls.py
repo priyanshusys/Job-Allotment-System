@@ -15,4 +15,13 @@ urlpatterns = [
     path('report/<int:report_id>/supervisor_verify/', views.supervisor_verify_user_report, name='supervisor_verify_user_report'),
     path('job/<int:job_id>/delete/', views.job_delete, name='job_delete'),
     path('report/<int:report_id>/', views.report_detail, name='report_detail'),
+]
+
+urlpatterns += [
+    path('dashboard/admin/section/<str:section>/', views.admin_section, name='admin_section'),
+    path('dashboard/admin/legacy/', views.legacy_admin_dashboard, name='legacy_admin_dashboard'),
+    path('ajax/user_search/', views.ajax_user_search, name='ajax_user_search'),
+    path('ajax/user_reset_password/', views.ajax_user_reset_password, name='ajax_user_reset_password'),
+    path('user/section/<str:section>/', views.user_section, name='user_section'),
+    path('supervisor/section/<str:section>/', views.supervisor_section, name='supervisor_section'),
 ] 

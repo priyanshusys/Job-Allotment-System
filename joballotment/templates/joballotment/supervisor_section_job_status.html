@@ -1,0 +1,79 @@
+{% load dict_extras %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Job Status</h4>
+</div>
+<div class="row mb-4">
+    <div class="col">
+        <div class="card text-bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Total Jobs</h5>
+                <p class="card-text display-6">{{ total_jobs }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Completed</h5>
+                <p class="card-text display-6">{{ completed_jobs }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Pending</h5>
+                <p class="card-text display-6">{{ pending_jobs }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mb-3 d-flex flex-wrap align-items-end gap-3">
+    <div>
+        <label for="job-status-filter" class="form-label mb-0 me-2">Status:</label>
+        <select id="job-status-filter" class="form-select d-inline-block w-auto">
+            <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All</option>
+            <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="submitted" {% if filter_status == 'submitted' %}selected{% endif %}>Submitted</option>
+        </select>
+    </div>
+    <div>
+        <label for="job-date-from" class="form-label mb-0 me-2">From:</label>
+        <input type="date" id="job-date-from" class="form-control d-inline-block w-auto" value="{{ date_from }}">
+    </div>
+    <div>
+        <label for="job-date-to" class="form-label mb-0 me-2">To:</label>
+        <input type="date" id="job-date-to" class="form-control d-inline-block w-auto" value="{{ date_to }}">
+    </div>
+    <button class="btn btn-primary" id="job-status-apply-btn" type="button">Apply</button>
+</div>
+<table class="table table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Title</th>
+            <th>User</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for job in jobs %}
+        <tr>
+            <td>{{ job.title }}</td>
+            <td>{{ job.assigned_to }}</td>
+            <td>
+                {% if supervisor_statuses|get_item:job.id == 'Verified' %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verified</span>
+                {% elif supervisor_statuses|get_item:job.id == 'Submitted' %}
+                    <span class="badge bg-info text-dark"><i class="bi bi-file-earmark-check"></i> Submitted</span>
+                {% elif job.status == 'completed' %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Completed</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="3">No jobs found for this filter.</td></tr>
+    {% endfor %}
+    </tbody>
+</table> 

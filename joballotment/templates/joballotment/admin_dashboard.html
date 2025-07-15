@@ -1,128 +1,285 @@
-{% extends 'joballotment/base.html' %}
-{% load dict_extras %}
+{% extends 'joballotment/base.html' %} 
+{% load dict_extras %} 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="dashboard-title">Admin Dashboard</h2>
-        <div>
-            <span class="me-3">User Name: {{ request.user.username }}</span>
-            <span>Time: <span id="currentTime"></span></span>
-        </div>
+<style>
+  .legacy-dashboard-container {
+    display: flex;
+    min-height: 90vh;
+    background: #f4f6fa;
+  }
+  .legacy-sidebar {
+    width: 230px;
+    background: #23395d;
+    color: #fff;
+    padding: 0;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+  .legacy-sidebar .sidebar-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    padding: 24px 24px 12px 24px;
+    color: #fff;
+    border-bottom: 1px solid #2e4a7d;
+  }
+  .legacy-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .legacy-sidebar li {
+    padding: 16px 24px;
+    cursor: pointer;
+    border-bottom: 1px solid #2e4a7d;
+    transition: background 0.2s;
+  }
+  .legacy-sidebar li:hover,
+  .legacy-sidebar li.active {
+    background: #2e4a7d;
+  }
+  .legacy-main {
+    flex: 1;
+    padding: 0 32px 32px 32px;
+    margin-left: 230px;
+    width: calc(100% - 230px);
+  }
+  .legacy-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 18px 32px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 24px;
+  }
+  .legacy-topbar .user-info {
+    font-size: 1rem;
+    color: #23395d;
+  }
+  .legacy-topbar .logout-btn {
+    margin-left: 16px;
+  }
+  .legacy-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .legacy-table th,
+  .legacy-table td {
+    vertical-align: middle !important;
+  }
+  .legacy-table thead {
+    background: #f4f6fa;
+  }
+</style>
+<div class="legacy-dashboard-container">
+  <div class="legacy-sidebar">
+    <div class="sidebar-title">Admin Panel</div>
+    <ul>
+      <li
+        id="menu-legacy-dashboard"
+        onclick="loadSection('legacy_dashboard', this)"
+      >
+        Legacy Dashboard
+      </li>
+      <li id="menu-create-user" onclick="loadSection('create_user', this)">Create User</li>
+      <li id="menu-create-job" onclick="loadSection('create_job', this)">
+        Create Job
+      </li>
+      <li id="menu-jobs-table" onclick="loadSection('jobs_table', this)">
+        Jobs Table
+      </li>
+      <li id="menu-reports-table" onclick="loadSection('reports_table', this)">
+        Reports Table
+      </li>
+      <li id="menu-users-table" onclick="loadSection('users_table', this)">
+        Users Table
+      </li>
+      <li
+        id="menu-change-password"
+        onclick="loadSection('change_password', this)"
+      >
+        Change Password
+      </li>
+      <li id="menu-new-title" onclick="loadSection('new_title', this)">
+        New Title
+      </li>
+      <li
+        id="menu-job-allocation"
+        onclick="loadSection('job_allocation', this)"
+      >
+        Job Allocation
+      </li>
+      <li id="menu-job-report" onclick="loadSection('job_report', this)">
+        Job Report
+      </li>
+    </ul>
+  </div>
+  <div class="legacy-main">
+    <div class="legacy-topbar">
+      <div class="user-info">
+        Welcome, <b>{{ request.user.username }}</b> &nbsp;|&nbsp;
+        <span id="currentTime"></span>
+      </div>
+      <a href="{% url 'logout' %}" class="btn btn-danger logout-btn">Logout</a>
     </div>
-    <div class="mb-4">
-        <div class="row g-2 align-items-center mb-2">
-            <form method="get" class="col-auto d-flex align-items-center" style="gap: 0.5rem;">
-                <label for="search_user_id" class="form-label mb-0">User ID:</label>
-                <input type="text" class="form-control" id="search_user_id" name="search_user_id" value="{{ searched_user_id|default:'' }}">
-                <button type="submit" class="btn btn-secondary">Search</button>
-                <input type="text" class="form-control" value="{{ searched_user_name|default:'' }}" readonly placeholder="Name">
-            </form>
-            {% if searched_user_id and searched_user_name %}
-            <form method="post" class="col-auto" style="display:inline;">
-                {% csrf_token %}
-                <input type="hidden" name="reset_user_id" value="{{ searched_user_id }}">
-                <button type="submit" name="reset_password" class="btn btn-warning">Reset Password</button>
-            </form>
-            {% endif %}
+    <div id="main-content">
+      <div class="legacy-card mb-4">
+        <h2>Welcome, Admin!</h2>
+        <p>This is your dashboard. Here is a quick summary:</p>
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title">Total Users</h5>
+                <p class="card-text" style="font-size: 2rem">
+                  {{ users|length }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title">Total Jobs</h5>
+                <p class="card-text" style="font-size: 2rem">
+                  {{ jobs|length }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title">Total Reports</h5>
+                <p class="card-text" style="font-size: 2rem">
+                  {{ reports|length }}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <a href="{% url 'job_create' %}" class="btn btn-success me-2">Create Job</a>
-        <a href="{% url 'user_create' %}" class="btn btn-primary">Create User</a>
+        <p>Select an action from the menu to get started.</p>
+      </div>
     </div>
-    <h4>Jobs</h4>
-    <table class="table table-bordered">
-        <thead><tr><th>Job ID</th><th>Title</th><th>Description</th><th>Remarks</th><th>Assigned To</th><th>Supervisor</th><th>User Status</th><th>Supervisor Status</th><th>Final Status</th><th>Allot</th></tr></thead>
-        <tbody>
-        {% for job in jobs %}
-            <tr>
-                <td>{{ job.id }}</td>
-                <td>{{ job.title }}</td>
-                <td>{{ job.description }}</td>
-                <td>{{ job.remark }}</td>
-                <td>{{ job.assigned_to }}</td>
-                <td>{{ job.supervisor }}</td>
-                <td>{{ job_user_statuses|get_item:job.id }}</td>
-                <td>{{ job_supervisor_statuses|get_item:job.id }}</td>
-                <td>{{ job_final_statuses|get_item:job.id }}</td>
-                <td><a href="{% url 'job_allotment' job.id %}" class="btn btn-sm btn-warning">Allot</a> <a href="{% url 'job_delete' job.id %}" class="btn btn-sm btn-danger ms-2">Delete</a></td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="11">No jobs found.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <h4>Reports</h4>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Job</th>
-                <th>User Report Status</th>
-                <th>Supervisor Report Status</th>
-                <th>Verify</th>
-                <th>View</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for job in jobs %}
-            {% with user_report=reports|get_item:job.id|get_item:'user' supervisor_report=reports|get_item:job.id|get_item:'supervisor' %}
-            <tr>
-                <td>{{ job.title }}</td>
-                <td>
-                    {% if user_report %}
-                        {{ user_report.status|title }}
-                    {% else %}
-                        Pending
-                    {% endif %}
-                </td>
-                <td>
-                    {% if supervisor_report %}
-                        {{ supervisor_report.status|title }}
-                    {% else %}
-                        Pending
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user_report and user_report.status == 'verified' and supervisor_report and supervisor_report.status == 'pending' and job.status != 'completed' %}
-                        <a href="{% url 'report_verify' supervisor_report.id %}" class="btn btn-sm btn-info">Verify</a>
-                    {% else %}
-                        <button class="btn btn-sm btn-secondary" disabled>Verify</button>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user_report %}
-                        <a href="{% url 'report_detail' user_report.id %}" class="btn btn-sm btn-outline-primary">View</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endwith %}
-        {% empty %}
-            <tr><td colspan="5">No jobs found.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <h4>Users</h4>
-    <table class="table table-bordered">
-        <thead><tr><th>User ID</th><th>Username</th><th>Email</th><th>Role</th></tr></thead>
-        <tbody>
-        {% for user in users %}
-            <tr>
-                <td>{{ user.id }}</td>
-                <td>{{ user.username }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.role|title }}</td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="5">No users found.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <a href="{% url 'logout' %}" class="btn btn-danger mt-4">Logout</a>
+  </div>
 </div>
 <script>
-    function updateTime() {
-        const now = new Date();
-        document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+  function updateTime() {
+    const now = new Date();
+    document.getElementById("currentTime").textContent =
+      now.toLocaleTimeString();
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
+  function loadSection(section, el) {
+    // Highlight active menu
+    document
+      .querySelectorAll(".legacy-sidebar li")
+      .forEach((li) => li.classList.remove("active"));
+    if (el) el.classList.add("active");
+    let url = `/dashboard/admin/section/${section}/`;
+    if (section === "legacy_dashboard") {
+      url = "/dashboard/admin/legacy/";
     }
-    setInterval(updateTime, 1000);
-    updateTime();
+    fetch(url)
+      .then((response) => response.text())
+      .then((html) => {
+        document.getElementById("main-content").innerHTML = html;
+        attachAjaxFormHandler();
+      });
+  }
+  function attachAjaxFormHandler() {
+    // Handle Create Job form
+    const jobForm = document.querySelector('#main-content form#ajax-job-form');
+    if (jobForm) {
+      jobForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(jobForm);
+        fetch(window.location.pathname + 'section/create_job/', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+          if (html.includes('id="ajax-job-form"')) {
+            document.getElementById('main-content').innerHTML = html;
+            attachAjaxFormHandler();
+          } else {
+            document.getElementById('main-content').innerHTML = '<div class="alert alert-success">Job created successfully!</div>';
+            setTimeout(() => loadSection('jobs_table'), 1200);
+          }
+        });
+      });
+    }
+    // Handle Create User form
+    const userForm = document.querySelector('#main-content form#ajax-user-form');
+    if (userForm) {
+      userForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(userForm);
+        fetch(window.location.pathname + 'section/create_user/', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+          if (html.includes('id="ajax-user-form"')) {
+            document.getElementById('main-content').innerHTML = html;
+            attachAjaxFormHandler();
+          } else {
+            document.getElementById('main-content').innerHTML = '<div class="alert alert-success">User created successfully!</div>';
+            setTimeout(() => loadSection('users_table'), 1200);
+          }
+        });
+      });
+    }
+
+    // Handle User Search (GET) and Password Reset (POST) in User Search section
+    const userSearchForm = document.querySelector('#main-content form[method="get"]');
+    if (userSearchForm) {
+      userSearchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const params = new URLSearchParams(new FormData(userSearchForm)).toString();
+        fetch(window.location.pathname + 'section/user_search/?' + params, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('main-content').innerHTML = html;
+          attachAjaxFormHandler();
+        });
+      });
+    }
+    const resetForm = document.querySelector('#main-content form[method="post"]');
+    if (resetForm) {
+      resetForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(resetForm);
+        fetch(window.location.pathname + 'section/user_search/', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('main-content').innerHTML = html;
+          attachAjaxFormHandler();
+        });
+      });
+    }
+  }
+  // Attach handler on initial load (if form is present)
+  document.addEventListener('DOMContentLoaded', attachAjaxFormHandler);
 </script>
-{% endblock %} 
+{% endblock %}

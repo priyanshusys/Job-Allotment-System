@@ -1,0 +1,30 @@
+<div id="ajax-message"></div>
+<form id="ajax-title-form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Add Title</button>
+</form>
+<script>
+// AJAX form submission for New Title
+if (document.getElementById('ajax-title-form')) {
+  document.getElementById('ajax-title-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    fetch(window.location.pathname, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+      if (html.includes('id=\"ajax-title-form\"')) {
+        document.getElementById('main-content').innerHTML = html;
+      } else {
+        document.getElementById('main-content').innerHTML = '<div class="alert alert-success">Title added successfully!</div>';
+        setTimeout(() => window.location.reload(), 1200);
+      }
+    });
+  });
+}
+</script> 

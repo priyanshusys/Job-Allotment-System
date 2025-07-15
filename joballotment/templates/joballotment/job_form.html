@@ -2,31 +2,11 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Create Job</h2>
-    <form method="post" id="jobForm">
+    <div id="ajax-message"></div>
+    <form id="ajax-job-form" method="post">
         {% csrf_token %}
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Job Title (Dropdown)</th>
-                    <th>Job Title (Custom)</th>
-                    <th>Description</th>
-                    <th>Remark</th>
-                    <th>Assign to</th>
-                    <th>Supervisor</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ form.job_title_dropdown }}</td>
-                    <td>{{ form.title }}</td>
-                    <td>{{ form.description }}</td>
-                    <td>{{ form.remark }}</td>
-                    <td>{{ form.assigned_to }}</td>
-                    <td>{{ form.supervisor }}</td>
-                </tr>
-            </tbody>
-        </table>
-        <button type="submit" class="btn btn-primary">Create</button>
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 </div>
 <script>

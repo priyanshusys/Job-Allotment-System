@@ -1,0 +1,70 @@
+{% load dict_extras %}
+<h3>Job Report</h3>
+<div class="row">
+    <div class="col-md-3">
+        <form method="get" class="mb-4">
+            <div class="mb-3">
+                <label for="date_from" class="form-label">From:</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.GET.date_from|default:'' }}">
+            </div>
+            <div class="mb-3">
+                <label for="date_to" class="form-label">To:</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.GET.date_to|default:'' }}">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </form>
+    </div>
+    <div class="col-md-9">
+        {% if error_message %}
+            <div class="alert alert-warning">{{ error_message }}</div>
+        {% endif %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Job</th>
+                    <th>User Report Status</th>
+                    <th>Supervisor Report Status</th>
+                    <th>Verify</th>
+                    <th>View</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for job in jobs %}
+                {% with user_report=reports|get_item:job.id|get_item:'user' supervisor_report=reports|get_item:job.id|get_item:'supervisor' %}
+                <tr>
+                    <td>{{ job.title }}</td>
+                    <td>
+                        {% if user_report %}
+                            {{ user_report.status|title }}
+                        {% else %}
+                            Pending
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if supervisor_report %}
+                            {{ supervisor_report.status|title }}
+                        {% else %}
+                            Pending
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user_report and user_report.status == 'verified' and supervisor_report and supervisor_report.status == 'pending' and job.status != 'completed' %}
+                            <a href="{% url 'report_verify' supervisor_report.id %}" class="btn btn-sm btn-info">Verify</a>
+                        {% else %}
+                            <button class="btn btn-sm btn-secondary" disabled>Verify</button>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user_report %}
+                            <a href="{% url 'report_detail' user_report.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endwith %}
+            {% empty %}
+                <tr><td colspan="5">No jobs found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div> 

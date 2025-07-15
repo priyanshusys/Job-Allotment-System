@@ -1,119 +1,108 @@
 {% extends 'joballotment/base.html' %}
 {% load dict_extras %}
 {% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <div class="card text-bg-primary mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Jobs to Supervise</h5>
-                    <p class="card-text display-6">{{ pending_jobs_to_supervise }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card text-bg-warning mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Pending Reports</h5>
-                    <p class="card-text display-6">{{ pending_user_reports }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="dashboard-title">Supervisor Dashboard</h2>
-        <div>
-            <span class="me-3">User Name: {{ request.user.username }}</span>
-            <span>Time: <span id="currentTime"></span></span>
-        </div>
-    </div>
-    <h4>User Reports to Review</h4>
-    <ul class="list-group mb-4">
-        {% for report in user_reports_to_review %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    <i class="bi bi-clipboard-data"></i> {{ report.job.title }}
-                    <span class="ms-2 small text-muted">({{ report.submitted_at|date:'M d, Y H:i' }})</span>
-                </span>
-                <a href="{% url 'supervisor_verify_user_report' report.id %}" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-check2-circle"></i> Review/Verify
-                </a>
-            </li>
-        {% empty %}
-            <li class="list-group-item">No user reports to review.</li>
-        {% endfor %}
+<style>
+  .supervisor-dashboard-container {
+    display: flex;
+    min-height: 90vh;
+    background: #f4f6fa;
+  }
+  .supervisor-sidebar {
+    width: 210px;
+    background: #23395d;
+    color: #fff;
+    padding: 0;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+  .supervisor-sidebar .sidebar-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 24px 24px 12px 24px;
+    color: #fff;
+    border-bottom: 1px solid #2e4a7d;
+  }
+  .supervisor-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .supervisor-sidebar li {
+    padding: 16px 24px;
+    cursor: pointer;
+    border-bottom: 1px solid #2e4a7d;
+    transition: background 0.2s;
+  }
+  .supervisor-sidebar li:hover,
+  .supervisor-sidebar li.active {
+    background: #2e4a7d;
+  }
+  .supervisor-main {
+    flex: 1;
+    padding: 0 32px 32px 32px;
+    margin-left: 210px;
+    width: calc(100% - 210px);
+  }
+  .supervisor-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 18px 32px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 24px;
+  }
+  .supervisor-topbar .user-info {
+    font-size: 1.5rem;
+    color: #23395d;
+  }
+  .supervisor-topbar .logout-btn {
+    margin-left: 16px;
+  }
+  @media (max-width: 768px) {
+    .supervisor-sidebar {
+      position: static;
+      width: 100%;
+      min-height: unset;
+      height: auto;
+    }
+    .supervisor-main {
+      margin-left: 0;
+      width: 100%;
+      padding: 0 8px 32px 8px;
+    }
+    .supervisor-topbar {
+      margin-left: 0;
+      padding: 12px 8px;
+    }
+  }
+</style>
+<div class="supervisor-dashboard-container">
+  <div class="supervisor-sidebar">
+    <div class="sidebar-title">Supervisor Menu</div>
+    <ul>
+      <li class="active" onclick="loadSupervisorSection('dashboard_summary', this)">Dashboard</li>
+      <li onclick="loadSupervisorSection('jobs_to_supervise', this)">Jobs to Supervise</li>
+      <li onclick="loadSupervisorSection('user_reports_to_review', this)">User Reports to Review</li>
+      <li onclick="loadSupervisorSection('supervisor_job_status', this)">Job Status</li>
+      <li onclick="loadSupervisorSection('supervisor_reports', this)">My Reports</li>
     </ul>
-    <h4>Jobs to Supervise</h4>
-    <table class="table table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for job in jobs %}
-            <tr>
-                <td>{{ job.title }}</td>
-                <td>
-                    {% if job_supervisor_report_statuses|get_item:job.id == 'Verified' %}
-                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verified</span>
-                    {% elif job_supervisor_report_statuses|get_item:job.id == 'Submitted' %}
-                        <span class="badge bg-info text-dark"><i class="bi bi-file-earmark-check"></i> Submitted</span>
-                    {% elif job.status == 'completed' %}
-                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Completed</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if job_supervisor_report_statuses|get_item:job.id == 'Pending' %}
-                        {% if job.id in jobs_with_verified_user_report %}
-                            <a href="{% url 'report_submit' job.id %}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-file-earmark-plus"></i> Submit Final Report
-                            </a>
-                        {% else %}
-                            <button class="btn btn-sm btn-outline-secondary" disabled>
-                                <i class="bi bi-lock"></i> Awaiting User Report Verification
-                            </button>
-                        {% endif %}
-                    {% else %}
-                        <button class="btn btn-sm btn-outline-secondary" disabled>Report Submitted</button>
-                        {% for report in supervisor_reports %}
-                            {% if report.job.id == job.id %}
-                                <a href="{% url 'report_detail' report.id %}" class="btn btn-sm btn-outline-info ms-2">View</a>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="3">No jobs to supervise.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <h4>User Reports for Your Jobs</h4>
-    <ul class="list-group mb-4">
-        {% for report in reports %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    <i class="bi bi-clipboard-data"></i> {{ report.job.title }}
-                    <span class="ms-2 small text-muted">({{ report.submitted_at|date:'M d, Y H:i' }})</span>
-                </span>
-                <span>
-                    {% if report.status == 'verified' %}
-                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verified</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
-                    {% endif %}
-                </span>
-            </li>
-        {% empty %}
-            <li class="list-group-item">No user reports submitted.</li>
-        {% endfor %}
-    </ul>
-    <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+  </div>
+  <div class="supervisor-main">
+    <div class="supervisor-topbar d-flex justify-content-between align-items-center">
+      <div class="user-info text-start">
+        Welcome, <b>{{ request.user.username }}</b> &nbsp;|&nbsp;
+        <span id="currentTime"></span>
+      </div>
+      <a href="{% url 'logout' %}" class="btn btn-danger logout-btn">Logout</a>
+    </div>
+    <div id="main-content"></div>
+  </div>
 </div>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script>
@@ -123,5 +112,44 @@
     }
     setInterval(updateTime, 1000);
     updateTime();
+    function loadSupervisorSection(section, el) {
+      document.querySelectorAll('.supervisor-sidebar li').forEach(li => li.classList.remove('active'));
+      if (el) el.classList.add('active');
+      let url = `/supervisor/section/${section}/`;
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('main-content').innerHTML = html;
+          attachSupervisorJobStatusFilterHandler();
+        });
+    }
+    function attachSupervisorJobStatusFilterHandler() {
+      const filter = document.getElementById('job-status-filter');
+      const dateFrom = document.getElementById('job-date-from');
+      const dateTo = document.getElementById('job-date-to');
+      const applyBtn = document.getElementById('job-status-apply-btn');
+      function reload() {
+        const val = filter ? filter.value : 'all';
+        const from = dateFrom ? dateFrom.value : '';
+        const to = dateTo ? dateTo.value : '';
+        let url = `/supervisor/section/supervisor_job_status/?status=${val}`;
+        if (from) url += `&date_from=${from}`;
+        if (to) url += `&date_to=${to}`;
+        fetch(url)
+          .then(response => response.text())
+          .then(html => {
+            document.getElementById('main-content').innerHTML = html;
+            attachSupervisorJobStatusFilterHandler();
+          });
+      }
+      if (filter) filter.onchange = reload;
+      if (applyBtn) applyBtn.onclick = reload;
+      if (dateFrom) dateFrom.onkeydown = function(e) { if (e.key === 'Enter') reload(); };
+      if (dateTo) dateTo.onkeydown = function(e) { if (e.key === 'Enter') reload(); };
+    }
+    // Load dashboard summary by default
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSupervisorSection('dashboard_summary', document.querySelector('.supervisor-sidebar li'));
+    });
 </script>
 {% endblock %} 

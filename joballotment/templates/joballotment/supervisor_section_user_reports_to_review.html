@@ -1,0 +1,23 @@
+<h4>User Reports to Review</h4>
+<ul class="list-group mb-4">
+    {% for report in user_reports_to_review %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-clipboard-data"></i> {{ report.job.title }} by {{ report.submitted_by }}
+                <span class="ms-2 small text-muted">({{ report.submitted_at|date:'M d, Y H:i' }})</span>
+            </span>
+            <span>
+                {% if report.status == 'verified' %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verified</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
+                {% endif %}
+                {% if report.status == 'pending' %}
+                    <a href="{% url 'supervisor_verify_user_report' report.id %}" class="btn btn-sm btn-outline-primary ms-2">Review</a>
+                {% endif %}
+            </span>
+        </li>
+    {% empty %}
+        <li class="list-group-item">No user reports to review.</li>
+    {% endfor %}
+</ul> 

@@ -10,6 +10,21 @@ ROLE_CHOICES = [
 
 class CustomUser(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
+    user_id = models.CharField(max_length=5, unique=True, blank=True, null=True)
+    department_code = models.CharField(max_length=10, blank=True, null=True)
+    department_name = models.CharField(max_length=100, blank=True, null=True)
+    designation = models.CharField(max_length=100, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.user_id:
+            # Generate a unique 5-digit user_id
+            import random
+            while True:
+                new_id = str(random.randint(10000, 99999))
+                if not CustomUser.objects.filter(user_id=new_id).exists():
+                    self.user_id = new_id
+                    break
+        super().save(*args, **kwargs)
 
 class Job(models.Model):
     title = models.CharField(max_length=255)
