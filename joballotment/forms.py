@@ -36,6 +36,7 @@ DEPARTMENT_CODE_CHOICES = [
     ('HR', 'HR'),
     ('IT', 'IT'),
     ('FIN', 'FIN'),
+    ('MKT', 'MKT'),
 ]
 
 DESIGNATION_CHOICES = [
